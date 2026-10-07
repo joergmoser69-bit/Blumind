@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
@@ -23,7 +23,7 @@ namespace Blumind.Model.MindMaps
                 throw new FileNotFoundException(null, filename);
 
             XmlDocument dom = new XmlDocument();
-            dom.Load(filename);
+            dom = global::Blumind.Core.XmlIO.Load(filename);
 
             MindMap map = LoadMindMap(dom);
 

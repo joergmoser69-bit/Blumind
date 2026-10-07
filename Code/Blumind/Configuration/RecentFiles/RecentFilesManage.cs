@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -183,7 +183,7 @@ namespace Blumind.Configuration
                 {
                     try
                     {
-                        dom.Load(fs);
+                        dom = global::Blumind.Core.XmlIO.Load(fs);
                     }
                     catch (System.Exception ex)
                     {

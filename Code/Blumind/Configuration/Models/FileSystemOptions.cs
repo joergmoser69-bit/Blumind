@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -68,7 +68,7 @@ namespace Blumind.Configuration.Models
             XmlDocument dom = new XmlDocument();
             try
             {
-                dom.Load(filename);
+                dom = global::Blumind.Core.XmlIO.Load(filename);
             }
             catch (System.Exception ex)
             {

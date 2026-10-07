@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
@@ -74,7 +74,7 @@ namespace Blumind.Design
                 rect.X += 5;
                 rect.Width -= 5;
 
-                IGraphics grf = new GdiGraphics(e.Graphics);
+                using var grf = new GdiGraphics(e.Graphics);
                 var gs = grf.Save();
                 grf.SetHighQualityRender();
                 var pen = grf.Pen(foreColor, 5);

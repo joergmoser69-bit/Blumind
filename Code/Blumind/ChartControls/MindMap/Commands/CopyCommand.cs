@@ -61,9 +61,9 @@ namespace Blumind.Controls.MapViews
             if(mapObjects.Length == 1 && mapObjects[0] != null)
                 mapObjects[0].CopyExtendContent(obj);
 
-            obj.SetData(typeof(MapClipboardData), new MapClipboardData(mapObjects));
+            obj.SetData(MapClipboardData.ClipboardFormat, new MapClipboardData(mapObjects).Data);
 
-            Clipboard.SetDataObject(obj);
+            Clipboard.SetDataObject(obj, true);
         }
     }
 }

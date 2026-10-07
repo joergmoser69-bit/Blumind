@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Xml;
@@ -37,7 +37,7 @@ namespace Blumind.Model.MindMaps
                 throw new FileNotFoundException();
 
             XmlDocument dom = new XmlDocument();
-            dom.Load(filename);
+            dom = global::Blumind.Core.XmlIO.Load(filename);
 
             if (dom.DocumentElement.Name != "map")
                 throw new ArgumentException("filename");
@@ -119,7 +119,7 @@ namespace Blumind.Model.MindMaps
             MindMap map = new MindMap();
 
             XmlDocument dom = new XmlDocument();
-            dom.Load(filename);
+            dom = global::Blumind.Core.XmlIO.Load(filename);
 
             Topic topic = ImportXmlFile(dom.DocumentElement);
             map.Root = topic;
@@ -160,7 +160,7 @@ namespace Blumind.Model.MindMaps
         static bool SaveAsXml(MindMap map, string filename)
         {
             XmlDocument dom = new XmlDocument();
-            dom.LoadXml("<?xml version='1.0' encoding='utf-8' ?><map/>");
+            dom = global::Blumind.Core.XmlIO.Parse("<?xml version='1.0' encoding='utf-8' ?><map/>");
 
             XmlElement document = dom.DocumentElement;
             document.SetAttribute("name", map.Name);

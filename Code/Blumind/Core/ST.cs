@@ -651,12 +651,8 @@ namespace Blumind.Core
             if (iconNode == null || image == null)
                 throw new ArgumentNullException();
 
-            Image image2 = Blumind.Controls.PaintHelper.CopyImage(image);
-
-            XmlCDataSection cdata = iconNode.OwnerDocument.CreateCDataSection(ImageBase64String(image2));
+            XmlCDataSection cdata = iconNode.OwnerDocument.CreateCDataSection(ImageBase64String(image));
             iconNode.AppendChild(cdata);
-
-            image2.Dispose();
         }
 
         public static void SerializeColor(XmlElement node, string name, Color color)
@@ -677,14 +673,15 @@ namespace Blumind.Core
             if (image == null)
                 return string.Empty;
 
+            if (EmbeddedImageEncoding.TryGetOriginal(image, out var original))
+                return Convert.ToBase64String(original);
+
             using (MemoryStream stream = new MemoryStream())
             {
                 try
                 {
                     image.Save(stream, ImageFormat.Png);
-                    stream.Position = 0;
-                    byte[] buffer = new byte[stream.Length];
-                    stream.Read(buffer, 0, buffer.Length);
+                    byte[] buffer = stream.ToArray();
                     stream.Close();
                     return Convert.ToBase64String(buffer);
                 }
@@ -726,7 +723,7 @@ namespace Blumind.Core
                         ms.Position = 0;
                         try
                         {
-                            return Image.FromStream(ms);
+                            return EmbeddedImageEncoding.Decode(buffer);
                         }
                         catch(System.Exception ex)
                         {
@@ -1186,7 +1183,7 @@ namespace Blumind.Core
 
             Regex reg = new Regex("<[^>]+>", RegexOptions.IgnoreCase);
             html = reg.Replace(html, "");
-            return System.Web.HttpUtility.HtmlDecode(html).Trim();
+            return System.Net.WebUtility.HtmlDecode(html).Trim();
         }
 
         public static string EscapeFileName(string filename)

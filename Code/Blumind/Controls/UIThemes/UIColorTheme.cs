@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Xml;
@@ -200,7 +200,7 @@ namespace Blumind.Controls
             {
                 try
                 {
-                    dom.Load(stream);
+                    dom = global::Blumind.Core.XmlIO.Load(stream);
                 }
                 catch
                 {

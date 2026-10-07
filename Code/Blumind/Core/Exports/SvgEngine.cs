@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Text;
@@ -52,7 +52,7 @@ namespace Blumind.Core.Exports
                 var graphics = new SvgGraphics(dom);
 
                 //
-                var args = new RenderArgs(graphics, (MindMap)chart, graphics.Font(ChartBox.DefaultChartFont));
+                using var args = new RenderArgs(graphics, (MindMap)chart, graphics.Font(ChartBox.DefaultChartFont));
                 var renderer = new GeneralRender();
                 renderer.Paint((MindMap)chart, args);
 

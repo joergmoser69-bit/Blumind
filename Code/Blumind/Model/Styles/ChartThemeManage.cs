@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
@@ -107,7 +107,7 @@ namespace Blumind.Model.Styles
         internal static ChartThemeFolder LoadFromXml(string text)
         {
             XmlDocument dom = new XmlDocument();
-            dom.LoadXml(text);
+            dom = global::Blumind.Core.XmlIO.Parse(text);
 
             if (dom.DocumentElement.Name != "themes")
                 return null;
@@ -210,7 +210,7 @@ namespace Blumind.Model.Styles
         private ChartTheme LoadTheme(string filename)
         {
             XmlDocument dom = new XmlDocument();
-            dom.Load(filename);
+            dom = global::Blumind.Core.XmlIO.Load(filename);
             if (dom.DocumentElement.Name != "theme")
                 throw new Exception(Lang._("Invalid file type"));
 
@@ -300,7 +300,7 @@ namespace Blumind.Model.Styles
             }
 
             XmlDocument dom = new XmlDocument();
-            dom.LoadXml("<?xml version='1.0' encoding='utf-8' ?><theme/>");
+            dom = global::Blumind.Core.XmlIO.Parse("<?xml version='1.0' encoding='utf-8' ?><theme/>");
 
             SerializeTheme(dom.DocumentElement, theme);
 

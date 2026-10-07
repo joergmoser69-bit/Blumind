@@ -1,600 +1,259 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Blumind.Configuration;
+using Blumind.Core;
+using Blumind.Dialogs;
+using Blumind.Globalization;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
 
 namespace Blumind.Controls
 {
-    public class HtmlEditBox : Control
+    public partial class HtmlEditBox : Control
     {
-        const string EDITOR_ID = "theTextbox";
-        string _BLANK_PAGE_HTML_;
-        WebBrowser theBrowser;
-        bool _ReadOnly;
-        bool TextSuspend;
+        readonly WebView2 browser;
+        readonly TaskCompletionSource ready = new TaskCompletionSource();
+        Task initialization;
+        string html = string.Empty;
+        string plainText = string.Empty;
+        bool readOnly;
+        int revision;
+        TextBox fallback;
 
         public HtmlEditBox()
         {
-            _BLANK_PAGE_HTML_ = Properties.Resources.html_content;
-            InitializeComponents();
+            browser = new WebView2 { Dock = DockStyle.Fill, AllowExternalDrop = false };
+            Controls.Add(browser);
+            BackColor = SystemColors.Window;
         }
 
+        internal static string UserDataFolder { get; set; }
+        internal WebView2 Browser => browser;
         protected bool BrowserReady { get; private set; }
+        protected string OriginalText { get; private set; } = string.Empty;
+        protected override Size DefaultSize => new Size(100, 100);
 
-        protected override Size DefaultSize
-        {
-            get
-            {
-                return new Size(100, 100);
-            }
-        }
-
-        /// <summary>
-        /// Returns the text the user edited in Html format
-        /// </summary>
-        [Category("Appearance")]
-        [Browsable(true)]
+        [Category("Appearance"), Bindable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        [Bindable(BindableSupport.Yes)]
         public override string Text
         {
-            get
-            {
-                return this.InnerHtml;
-            }
+            get => html;
             set
             {
-                this.OriginalText = value;
-                this.InnerHtml = value;
+                html = OriginalText = value ?? string.Empty;
+                plainText = ST.HtmlToText(html);
+                revision++;
+                if (fallback != null)
+                    fallback.Text = html;
+                else if (BrowserReady)
+                    RunScript(UpdateContentScript());
             }
         }
 
-        [Category("Appearance")]
-        public string PlainText
-        {
-            get
-            {
-                if (WaitUntilBrowserReady())
-                {
-                    var txb = TextBoxElement;
-                    if (txb != null)
-                        return GetSafeHtml(txb.InnerText);
-                }
-
-                return null;
-            }
-        }
-
-        protected string InnerHtml
-        {
-            get
-            {
-                if (WaitUntilBrowserReady())
-                {
-                    var txb = TextBoxElement;
-                    if (txb != null)
-                        return GetSafeHtml(txb.InnerHtml);
-                }
-
-                return null;
-            }
-
-            private set
-            {
-                if (!this.BrowserReady)
-                {
-                    TextSuspend = true;
-                    return;
-                }
-
-                if (TextBoxElement == null)
-                {
-                    InitializateBlankPage();
-
-                    while (!this.BrowserReady)
-                        Thread.Sleep(100);
-                }
-
-                var txb = TextBoxElement;
-                if (txb != null)
-                {
-                    txb.InnerHtml = value;
-                    TextSuspend = false;
-                }
-            }
-        }
-
-        protected string OriginalText { get; private set; }
+        [Browsable(false)]
+        public string PlainText => plainText;
 
         [DefaultValue(false)]
         public bool ReadOnly
         {
-            get { return _ReadOnly; }
-            set 
-            {
-                if (_ReadOnly != value)
-                {
-                    _ReadOnly = value;
-                    OnReadOnlyChanged();
-                }
-            }
-        }
-
-        HtmlElement TextBoxElement
-        {
-            get
-            {
-                if (BrowserReady)
-                    return theBrowser.Document.GetElementById(EDITOR_ID);
-                else
-                    return null;
-            }
-        }
-
-        [DefaultValue(typeof(Color), "Window")]
-        public override Color BackColor
-        {
-            get
-            {
-                return base.BackColor;
-            }
+            get => readOnly;
             set
             {
-                base.BackColor = value;
+                readOnly = value;
+                if (fallback != null) fallback.ReadOnly = value;
+                if (BrowserReady)
+                    RunScript("window.editor.readOnly(" + JsonSerializer.Serialize(value) + ")");
             }
         }
 
-        void InitializeComponents()
-        {
-            theBrowser = new WebBrowser();
-            //theBrowser.AllowNavigation = false;
-            theBrowser.Dock = DockStyle.Fill;
-            theBrowser.Visible = false;
-            theBrowser.ScriptErrorsSuppressed = true;
-            theBrowser.Navigating += theBrowser_Navigating;
-            theBrowser.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(this.theBrowser_DocumentCompleted);
-
-            Controls.Add(theBrowser);
-            BackColor = SystemColors.Window;
-            ReadOnly = false;
-        }
-
-        void theBrowser_Navigating(object sender, WebBrowserNavigatingEventArgs e)
-        {
-            if (e.Url != null)
-            {
-                if (StringComparer.OrdinalIgnoreCase.Equals(e.Url.AbsoluteUri, "about:blank"))
-                    return;
-                Helper.OpenUri(e.Url);
-            }
-
-            e.Cancel = true;
-        }
-
-        void InitializateBlankPage()
-        {
-            //theBrowser.Navigate("about:blank");
-            //theBrowser.Document.OpenNew(true);
-            //theBrowser.Document.Write(string.Empty);
-            //theBrowser.Document.Write(_BLANK_PAGE_HTML_);
-            theBrowser.DocumentText = _BLANK_PAGE_HTML_;
-            //theBrowser.Refresh();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-
-            if (disposing)
-            {
-                if (theBrowser != null && !theBrowser.IsDisposed && !theBrowser.Disposing)
-                {
-                    theBrowser.Dispose();
-                    theBrowser = null;
-                }
-            }
-        }
-
-        protected override void OnCreateControl()
+        protected override async void OnCreateControl()
         {
             base.OnCreateControl();
-
-            if (!this.IsDesignMode())
-            {
-                theBrowser.Visible = true;
-                InitializateBlankPage();
-                OnReadOnlyChanged();
-            }
+            if (!this.IsDesignMode()) await EnsureReadyAsync();
         }
 
-        void theBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        internal Task EnsureReadyAsync() => initialization ??= InitializeAsync();
+
+        async Task InitializeAsync()
         {
-            BrowserReady = true;
-
-            if (TextSuspend)
+            try
             {
-                InnerHtml = OriginalText;
-            }
-        }
-
-        bool WaitUntilBrowserReady()
-        {
-            if (this.BrowserReady)
-            {
-                return true;
-            }
-
-            for (int i = 0; i < 60 && !this.BrowserReady; i++)
-            {
-                System.Threading.Thread.Sleep(100);
-                Application.DoEvents();
-            }
-
-            return BrowserReady;
-        }
-
-        protected virtual void OnReadOnlyChanged()
-        {
-            if (!this.Created || theBrowser == null || !theBrowser.Created)
-                return;
-
-            if (WaitUntilBrowserReady())
-            {
-                var txb = TextBoxElement;
-                if (txb != null)
+                string folder = UserDataFolder ?? Path.Combine(ProgramEnvironment.ApplicationDataDirectory, "WebView2");
+                var environment = await CoreWebView2Environment.CreateAsync(null, folder);
+                if (IsDisposed) return;
+                await browser.EnsureCoreWebView2Async(environment);
+                if (IsDisposed) return;
+                var core = browser.CoreWebView2;
+                core.Settings.AreDefaultContextMenusEnabled = true;
+                core.Settings.AreDevToolsEnabled = false;
+                core.Settings.AreHostObjectsAllowed = false;
+                core.Settings.IsStatusBarEnabled = false;
+                core.Settings.IsWebMessageEnabled = true;
+                core.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
+                core.NewWindowRequested += (_, e) => e.Handled = true;
+                // NavigateToString may expose a data: URI during its initial navigation.
+                // After the trusted local page has loaded, all document navigation is blocked.
+                core.NavigationStarting += (_, e) => e.Cancel = BrowserReady;
+                core.WebMessageReceived += OnWebMessage;
+                core.NavigationCompleted += (_, e) =>
                 {
-                    txb.SetAttribute("contenteditable", ReadOnly ? "false" : "true");
-                    txb.LostFocus += txb_LostFocus;
+                    if (!e.IsSuccess) ready.TrySetException(new InvalidOperationException("The note editor could not be loaded: " + e.WebErrorStatus));
+                };
+                using var input = typeof(HtmlEditBox).Assembly.GetManifestResourceStream("Blumind.Resources.html_editor.html");
+                using var reader = new StreamReader(input);
+                core.NavigateToString(reader.ReadToEnd());
+                await ready.Task.WaitAsync(TimeSpan.FromSeconds(20));
+                if (IsDisposed) return;
+                BrowserReady = true;
+                await core.ExecuteScriptAsync(UpdateContentScript());
+                await core.ExecuteScriptAsync(StyleScript());
+            }
+            catch (Exception exception)
+            {
+                if (IsDisposed) return;
+                BrowserReady = false;
+                Helper.WriteLog(exception);
+                browser.Visible = false;
+                // Preserve notes and allow source editing when the Edge runtime is unavailable.
+                fallback = new TextBox { Dock = DockStyle.Fill, Multiline = true,
+                    ScrollBars = ScrollBars.Both, Text = html, ReadOnly = readOnly };
+                fallback.TextChanged += (_, _) =>
+                {
+                    if (html == fallback.Text) return;
+                    html = fallback.Text;
+                    plainText = ST.HtmlToText(html);
+                    OnTextChanged(EventArgs.Empty);
+                };
+                var information = new Label { Dock = DockStyle.Top, AutoSize = true,
+                    Text = Lang._("WebView2 unavailable – HTML source editor") };
+                Controls.Add(fallback);
+                Controls.Add(information);
+                fallback.BringToFront();
+                information.BringToFront();
+            }
+        }
+
+        string UpdateContentScript() => "window.editor.set(" + JsonSerializer.Serialize(html) + "," +
+            revision + "," + JsonSerializer.Serialize(readOnly) + ")";
+
+        string StyleScript() => "window.editor.font(" + JsonSerializer.Serialize(Font.FontFamily.Name) + "," +
+            JsonSerializer.Serialize(Font.SizeInPoints.ToString(System.Globalization.CultureInfo.InvariantCulture) + "pt") + ")";
+
+        void OnWebMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            if (e.Source != "about:blank") return;
+            using var message = JsonDocument.Parse(e.WebMessageAsJson);
+            var state = message.RootElement;
+            if (state.TryGetProperty("ready", out var isReady) && isReady.GetBoolean())
+            {
+                ready.TrySetResult();
+                return;
+            }
+            if (state.GetProperty("revision").GetInt32() != revision) return;
+            if (state.TryGetProperty("link", out var link))
+            {
+                if (IsAllowedLink(link.GetString())) Helper.OpenUrl(link.GetString());
+                return;
+            }
+            ApplyState(state);
+        }
+
+        void ApplyState(JsonElement state)
+        {
+            plainText = state.GetProperty("text").GetString();
+            if (state.GetProperty("changed").GetBoolean() && !ReadOnly)
+            {
+                string edited = state.GetProperty("html").GetString();
+                if (edited != html)
+                {
+                    html = edited;
+                    OnTextChanged(EventArgs.Empty);
                 }
             }
         }
 
-        void txb_LostFocus(object sender, HtmlElementEventArgs e)
+        internal static bool IsAllowedLink(string value) => Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == "https" || uri.Scheme == "http" || uri.Scheme == "mailto");
+
+        async void RunScript(string script)
         {
+            try
+            {
+                if (BrowserReady && !IsDisposed) await browser.CoreWebView2.ExecuteScriptAsync(script);
+            }
+            catch (Exception e) when (e is InvalidOperationException || e is ObjectDisposedException ||
+                e is System.Runtime.InteropServices.COMException)
+            {
+                if (!IsDisposed) Helper.WriteLog(e);
+            }
+        }
+
+        public async Task EndEditAsync()
+        {
+            await EnsureReadyAsync();
+            if (BrowserReady && !IsDisposed)
+            {
+                int expectedRevision = revision;
+                string result = await browser.CoreWebView2.ExecuteScriptAsync("window.editor.state()");
+                using var state = JsonDocument.Parse(result);
+                if (revision == expectedRevision) ApplyState(state.RootElement);
+            }
             EndEdit();
         }
 
         public bool EndEdit()
         {
-            if (!ReadOnly)
-            {
-                if (OriginalText != Text)
-                {
-                    OnTextChanged(EventArgs.Empty);
-                    OriginalText = Text;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        
-        protected override void OnGotFocus(EventArgs e)
-        {
-            base.OnGotFocus(e);
-
-            OnFocusChanged();
-        }
-
-        protected override void OnLostFocus(EventArgs e)
-        {
-            base.OnLostFocus(e);
-
-            OnFocusChanged();
-        }
-
-        void OnFocusChanged()
-        {
-            if (this.ContainsFocus)
-                return;
-
-            Refresh();
-            if (theBrowser.Focused)
-            {
-                WaitUntilBrowserReady();
-                theBrowser.Document.InvokeScript("InitFocus");
-            }
+            if (ReadOnly || OriginalText == html) return false;
+            OriginalText = html;
+            OnTextChanged(EventArgs.Empty);
+            return true;
         }
 
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
-
-            SetBrowserFont(this.Font);
+            if (BrowserReady) RunScript(StyleScript());
         }
 
-        void SetBrowserFont(Font font)
-        {
-            if (BrowserReady)
-            {
-                if (font != null)
-                {
-                    theBrowser.Document.InvokeScript("SetFont",
-                        new object[] {
-                            font.Name,
-                            font.Size.ToString(System.Globalization.CultureInfo.InvariantCulture) + "pt"});
-                }
-                else
-                {
-                    theBrowser.Document.InvokeScript("SetFont", new object[] { null, null });
-                }
-            }
-        }
-        
-        #region Security HTML
-        static string[] _illegalPatternsDefault = new string[] {
-                @"<script.*?>",                            // all <script >
-                @"<\w+\s+.*?(j|java|vb|ecma)script:.*?>",  // any tag containing *script:
-                @"<\w+(\s+|\s+.*?\s+)on\w+\s*=.+?>",       // any tag containing an attribute starting with "on"
-                @"</?input.*?>"                            // <input> and </input>
-            };
-
-        string[] _illegalPatterns = _illegalPatternsDefault;
-
-        /// <summary>
-        /// Contains a list of regular expression that are cleared from the html.
-        /// Like script, of event handlers
-        /// </summary>
-        [Category("Behavior")]
-        [Description(@"A list of regular expressions that are removed from the html. To reset, set to single line with *.")]
-        public string[] IllegalPatterns
-        {
-            get
-            {
-                if (this._illegalPatterns == null)
-                {
-                    return new string[0];
-                }
-                return this._illegalPatterns;
-            }
-            set
-            {
-                // When zero length then store a null
-                if (value == null || value.Length == 0)
-                {
-                    this._illegalPatterns = null;
-                    return;
-                }
-                if (value.Length == 1 && value[0] == "*")
-                {
-                    this._illegalPatterns = _illegalPatternsDefault;
-                    return;
-                }
-                // Remove empty & duplicate strings
-                List<string> buf = new List<string>();
-                foreach (var item in value)
-                {
-                    if (!string.IsNullOrEmpty(item) && !buf.Contains(item))
-                    {
-                        buf.Add(item);
-                    }
-                }
-                this._illegalPatterns = buf.Count == 0 ? null : buf.ToArray();
-            }
-        }
-
-        public string GetSafeHtml(string original)
-        {
-            if (string.IsNullOrEmpty(original) || this.IllegalPatterns.Length == 0)
-            {
-                return original;
-            }
-
-            string buf = original;
-            foreach (var pattern in this.IllegalPatterns)
-            {
-                Regex reg = new Regex(pattern,
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.Multiline |
-                    RegexOptions.Singleline);
-                buf = reg.Replace(buf, string.Empty);
-            }
-            System.Diagnostics.Debug.WriteLineIf(buf != original, "Filtered: " + buf);
-            return buf;
-        }
-
-        #endregion
-
-        #region Operations
         public bool ExecCommand(string command, bool showUI, object value)
         {
-            if (DesignMode)
-                return false;
-
-            if (WaitUntilBrowserReady())
+            if (!BrowserReady || (ReadOnly && command != HtmlCommandIdentifiers.Copy)) return false;
+            if (command == HtmlCommandIdentifiers.CreateLink)
             {
-                theBrowser.Document.ExecCommand(command, showUI, value);
-                return true;
+                using var dialog = new InputDialog(command == HtmlCommandIdentifiers.CreateLink ? "Link" : "Image", "URL");
+                if (dialog.ShowDialog(this) != DialogResult.OK || !IsAllowedLink(dialog.Value)) return false;
+                value = dialog.Value;
             }
-
-            return false;
-        }
-
-        public bool ExecCommand(string command, object value)
-        {
-            return ExecCommand(command, false, value);
-        }
-
-        public bool ExecCommand(string command)
-        {
-            return ExecCommand(command, false, null);
-        }
-
-        public void Copy()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Copy);
-        }
-
-        public void Cut()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Cut);
-        }
-
-        public void Paste()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Paste);
-        }
-
-        public void Delete()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Delete);
-        }
-
-        public void Undo()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Undo);
-        }
-
-        public void Redo()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Redo);
-        }
-
-        public void SetBold()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Bold);
-        }
-
-        public void SetItalic()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Italic);
-        }
-
-        public void SetUnderline()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Underline);
-        }
-
-        public void SetStrikeThrough()
-        {
-            ExecCommand(HtmlCommandIdentifiers.StrikeThrough);
-        }
-
-        public void InsertOrderedList()
-        {
-            ExecCommand(HtmlCommandIdentifiers.InsertOrderedList);
-        }
-
-        public void InsertUnOrderedList()
-        {
-            ExecCommand(HtmlCommandIdentifiers.InsertUnorderedList);
-        }
-
-        public void Outdent()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Outdent);
-        }
-
-        public void Indent()
-        {
-            ExecCommand(HtmlCommandIdentifiers.Indent);
-        }
-
-        public void SetFont(Font font)
-        {
-            if (font == null)
-                return;
-
-            SetFontName(font.FontFamily.Name);
-
-            float[] htmlSize = new float[] { 8, 10, 12, 14, 18, 24, 36 };
-            int hs = htmlSize.Length - 1;
-            for (int i = 0; i < htmlSize.Length; i++)
+            if (command == HtmlCommandIdentifiers.InsertImage)
             {
-                if (font.SizeInPoints <= hs)
-                {
-                    hs = i;
-                    break;
-                }
+                using var dialog = new OpenFileDialog { Filter = "Images|*.png;*.jpg;*.jpeg;*.gif;*.bmp" };
+                if (dialog.ShowDialog(this) != DialogResult.OK) return false;
+                using var image = Image.FromFile(dialog.FileName);
+                using var data = new MemoryStream();
+                image.Save(data, System.Drawing.Imaging.ImageFormat.Png);
+                value = "data:image/png;base64," + Convert.ToBase64String(data.ToArray());
             }
-            SetFontSize((hs + 1).ToString());
-
-            if ((font.Style & FontStyle.Bold) == FontStyle.Bold)
-                SetBold();
-
-            if ((font.Style & FontStyle.Italic) == FontStyle.Italic)
-                SetItalic();
-
-            if ((font.Style & FontStyle.Underline) == FontStyle.Underline)
-                SetUnderline();
-
-            if ((font.Style & FontStyle.Strikeout) == FontStyle.Strikeout)
-                SetStrikeThrough();
+            if (command == HtmlCommandIdentifiers.Paste)
+            {
+                string pasted = Clipboard.ContainsText(TextDataFormat.Html)
+                    ? ClipboardHelper.GetHtml() ?? string.Empty
+                    : System.Net.WebUtility.HtmlEncode(Clipboard.GetText()).Replace("\n", "<br>");
+                RunScript("window.editor.paste(" + JsonSerializer.Serialize(pasted) + ")");
+            }
+            else
+                RunScript("window.editor.command(" + JsonSerializer.Serialize(command) + "," + JsonSerializer.Serialize(value) + ")");
+            return true;
         }
 
-        public void SetFontName(string fontName)
+        protected override void Dispose(bool disposing)
         {
-            ExecCommand(HtmlCommandIdentifiers.FontName, fontName);
+            if (disposing) ready.TrySetCanceled();
+            base.Dispose(disposing);
         }
-
-        public void SetFontSize(string fontSize)
-        {
-            ExecCommand(HtmlCommandIdentifiers.FontSize, fontSize);
-        }
-
-        public void IncreaseFontSize()
-        {
-            ExecCommand(HtmlCommandIdentifiers.IncreaseFontSize, "1");
-        }
-
-        public void DecreaseFontSize()
-        {
-            ExecCommand(HtmlCommandIdentifiers.DecreaseFontSize, "1");
-        }
-
-        public void SetForeColor(string color)
-        {
-            ExecCommand(HtmlCommandIdentifiers.ForeColor, color);
-        }
-
-        public void SetForeColor(Color color)
-        {
-            ExecCommand(HtmlCommandIdentifiers.ForeColor, color.ToWebColor());
-        }
-
-        public void SetBackColor(string color)
-        {
-            ExecCommand(HtmlCommandIdentifiers.BackColor, color);
-        }
-
-        public void SetBackColor(Color color)
-        {
-            ExecCommand(HtmlCommandIdentifiers.BackColor, color.ToWebColor());
-        }
-
-        public void AddHyperLink()
-        {
-            ExecCommand(HtmlCommandIdentifiers.CreateLink);
-        }
-
-        public void AddImage()
-        {
-            ExecCommand(HtmlCommandIdentifiers.InsertImage, true, null);
-        }
-
-        public void AlignmentLeft()
-        {
-            ExecCommand(HtmlCommandIdentifiers.JustifyLeft);
-        }
-
-        public void AlignmentCenter()
-        {
-            ExecCommand(HtmlCommandIdentifiers.JustifyCenter);
-        }
-
-        public void AlignmentRight()
-        {
-            ExecCommand(HtmlCommandIdentifiers.JustifyRight);
-        }
-
-        public void AlignmentJustify()
-        {
-            ExecCommand(HtmlCommandIdentifiers.JustifyFull);
-        }
-        #endregion
     }
 }

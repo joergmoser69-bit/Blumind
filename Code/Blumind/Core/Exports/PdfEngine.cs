@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -84,7 +84,7 @@ namespace Blumind.Core.Exports
                 return false;
 
             // Create a new PDF document
-            PdfDocument doc = new PdfDocument();
+            using PdfDocument doc = new PdfDocument();
             doc.Info.Title = document.Name;
             doc.Info.Author = document.Author;
             doc.Info.Elements.Add("/Company", new PdfStringObject(doc, document.Company));
@@ -112,12 +112,12 @@ namespace Blumind.Core.Exports
             }
 
             // Get an XGraphics object for drawing
-            var graphics = XGraphics.FromPdfPage(page);
+            using var graphics = XGraphics.FromPdfPage(page);
 
             //
             if (ExportOptions.WithBackground && !chart.BackColor.IsEmpty)
             {
-                graphics.Clear(chart.BackColor);
+                graphics.DrawRectangle(new XSolidBrush(chart.BackColor), 0, 0, page.Width.Point, page.Height.Point);
             }
 
             //
@@ -138,7 +138,7 @@ namespace Blumind.Core.Exports
             if (chart is MindMap)
             {
                 var grf = new PdfGraphics(graphics);
-                var args = new RenderArgs(grf, (MindMap)chart, grf.Font(ChartBox.DefaultChartFont));
+                using var args = new RenderArgs(grf, (MindMap)chart, grf.Font(ChartBox.DefaultChartFont));
                 var renderer = new GeneralRender();
                 renderer.Paint((MindMap)chart, args);
             }

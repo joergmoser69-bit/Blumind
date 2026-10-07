@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
@@ -60,7 +60,7 @@ namespace Blumind.Model.Documents
                 var state = e.Graphics.Save();
                 var contentSize = chart.GetContentSize();
                 var zoom = PaintHelper.GetZoom(contentSize, e.PageBounds.Size);
-                var args = new RenderArgs(RenderMode.Print, e.Graphics, (MindMap)chart, ChartBox.DefaultChartFont);
+                using var args = new RenderArgs(RenderMode.Print, e.Graphics, (MindMap)chart, ChartBox.DefaultChartFont);
                 e.Graphics.ScaleTransform(zoom, zoom);
                 
                 var renderer = new GeneralRender();
@@ -71,7 +71,7 @@ namespace Blumind.Model.Documents
                 if (Options.Current.GetBool(Blumind.Configuration.OptionNames.PageSettigs.PrintDocumentTitle))
                 {
                     var ptTitle = e.MarginBounds.Location;
-                    var brush = new SolidBrush(Color.Black);
+                    using var brush = new SolidBrush(Color.Black);
                     e.Graphics.DrawString(chart.Name, ChartBox.DefaultChartFont, brush, ptTitle.X, ptTitle.Y);
                 }
             }

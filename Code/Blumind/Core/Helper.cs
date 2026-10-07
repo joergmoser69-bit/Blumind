@@ -28,7 +28,7 @@ namespace Blumind
                     if (File.Exists(url) && StringComparer.OrdinalIgnoreCase.Equals(Path.GetExtension(url), Document.Extension))
                         Program.MainForm.OpenDocument(url);
                     else
-                        Process.Start(url);
+                        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
                 }
                 catch (System.Exception ex)
                 {

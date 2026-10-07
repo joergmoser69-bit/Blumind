@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -647,7 +647,7 @@ namespace Blumind.Controls.MapViews
 
                 if (Render != null && Map != null)
                 {
-                    RenderArgs args = new RenderArgs(renderMode, grf, this, ChartBox.DefaultChartFont);
+                    using var args = new RenderArgs(renderMode, grf, this, ChartBox.DefaultChartFont);
                     Render.Paint(Map, args);
                 }
 

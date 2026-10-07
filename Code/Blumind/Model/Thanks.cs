@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Xml;
 using Blumind.Core;
@@ -31,7 +31,7 @@ namespace Blumind.Model
         public static ThankItem[] GetList()
         {
             XmlDocument dom = new XmlDocument();
-            dom.LoadXml(Properties.Resources.thanks);
+            dom = global::Blumind.Core.XmlIO.Parse(Properties.Resources.thanks);
             List<ThankItem> list = new List<ThankItem>();
             Hashtable peoples = new Hashtable(StringComparer.OrdinalIgnoreCase);
 

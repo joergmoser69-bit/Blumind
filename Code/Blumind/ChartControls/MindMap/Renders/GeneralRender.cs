@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -73,7 +73,7 @@ namespace Blumind.Controls.MapViews
             if (map == null)
                 throw new ArgumentNullException();
 
-            var graphics = new GdiGraphics(e.Graphics);
+            using var graphics = new GdiGraphics(e.Graphics);
             ResetObjects(graphics, map);
 
             if (!map.BackColor.IsEmpty)
@@ -281,7 +281,7 @@ namespace Blumind.Controls.MapViews
             bool active = false;
             if (e.Mode == RenderMode.UserInface && e.View != null)
             {
-                hover = e.View.HoverObject != null && e.View.HoverObject.Topic == topic && !e.View.HoverObject.IsFoldingButton;
+                hover = !e.View.HoverObject.IsEmpty && e.View.HoverObject.Topic == topic && !e.View.HoverObject.IsFoldingButton;
                 select = topic.Selected;
                 active = topic == e.View.SelectedTopic;
             }
@@ -543,7 +543,7 @@ namespace Blumind.Controls.MapViews
                     };
 
                 var gs = grf.Save();
-                var graphics = new GdiGraphics(grf);
+                using var graphics = new GdiGraphics(grf);
                 PaintHelper.SetHighQualityRender(grf);
                 for (int i = 0; i < 4; i++)
                 {

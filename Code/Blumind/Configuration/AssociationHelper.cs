@@ -84,6 +84,7 @@ namespace Blumind.Configuration
                 else
                     process.StartInfo.Arguments = ARG_REG_BMD;
                 process.StartInfo.Verb = "runas"; // 提升权限为 administrators
+                process.StartInfo.UseShellExecute = true;
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 process.Start();
@@ -155,7 +156,8 @@ namespace Blumind.Configuration
             {
                 if (args.Contains(ARG_REG_BMD, StringComparer.OrdinalIgnoreCase))
                 {
-                    var icon = string.Format("\"{0}\",1", Application.ExecutablePath);
+                    var documentIcon = System.IO.Path.Combine(Application.StartupPath, "document.ico");
+                    var icon = string.Format("\"{0}\",0", System.IO.File.Exists(documentIcon) ? documentIcon : Application.ExecutablePath);
                     SetAssociation(DOC_TYPE_BMD_EXT, DOC_TYPE_BMD_NAME, DOC_TYPE_BMD_DESC, Application.ExecutablePath, icon);
                     return true;
                 }

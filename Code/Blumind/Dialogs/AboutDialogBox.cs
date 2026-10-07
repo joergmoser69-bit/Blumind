@@ -32,7 +32,7 @@ namespace Blumind.Dialogs
                 ProductInfo.GetInformation(),
                 ProductInfo.Copyright,
                 "Some Icons are Copyright © Yusuke Kamiyamane.",
-                string.Format("Pdfsharp {0}({1})", Lang._("Version"), PdfSharp.ProductVersionInfo.Version));
+                string.Format("Pdfsharp {0}({1})", Lang._("Version"), typeof(PdfSharp.Pdf.PdfDocument).Assembly.GetName().Version));
 
             AfterInitialize();
         }

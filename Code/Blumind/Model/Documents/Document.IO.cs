@@ -81,15 +81,14 @@ namespace Blumind.Model.Documents
 
         public static Document Load(FileStream stream)
         {
-            XmlDocument dom = new XmlDocument();
-            dom.Load(stream);
-            stream.Close();
+            XmlDocument dom = XmlIO.Load(stream);
 
             return Load(dom);
         }
 
         public static Document Load(XmlDocument dom)
         {
+            XmlIO.ValidateDepth(dom);
             if (dom.DocumentElement == null)
                 return null;
 
@@ -180,14 +179,18 @@ namespace Blumind.Model.Documents
         static ChartPage LoadChartDocument(Version documentVersion, XmlElement node)
         {
             ChartPage chart = null;
-            ChartType chartType = ST.GetEnumValue(node.GetAttribute("type"), ChartType.MindMap);
+            string typeName = node.GetAttribute("type");
+            ChartType chartType = ChartType.MindMap;
+            if (!string.IsNullOrEmpty(typeName)
+                && (!Enum.TryParse(typeName, true, out chartType) || !Enum.IsDefined(chartType)))
+                throw new NotSupportedException("Unsupported chart type: " + typeName);
             switch (chartType)
             {
                 case ChartType.MindMap:
                     chart = new MindMap();// MindMapIO.LoadAsXml(chartElement);
                     break;
                 default:
-                    return null;
+                    throw new NotSupportedException("Unsupported chart type: " + node.GetAttribute("type"));
             }
 
             if (chart != null)
@@ -217,7 +220,7 @@ namespace Blumind.Model.Documents
             }
 
             doc.Charts.Add(map);
-
+            doc.Modified = false;
             return doc;
         }
 
@@ -235,12 +238,8 @@ namespace Blumind.Model.Documents
             if (dom == null)
                 return;
 
-            using (FileStream stream = new FileStream(filename, FileMode.Create, FileAccess.Write))
-            {
-                dom.Save(stream);
-                FileName = filename;
-                stream.Close();
-            }
+            AtomicFile.Write(filename, dom.Save);
+            FileName = filename;
         }
 
         public void Save(FileStream stream)

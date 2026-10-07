@@ -76,13 +76,13 @@ namespace Blumind.Controls.MapViews
 
         void OnHoverObjectChanged(HitTestResult old)
         {
-            if (old != null)
+            if (!old.IsEmpty)
             {
-                if (old.Widget != null && (HoverObject == null || HoverObject.Widget != old.Widget) && old.Widget.ResponseMouse)
+                if (old.Widget != null && (HoverObject.IsEmpty || HoverObject.Widget != old.Widget) && old.Widget.ResponseMouse)
                     old.Widget.Hover = false;
             }
 
-            if (HoverObject != null)
+            if (!HoverObject.IsEmpty)
             {
                 if (HoverObject.Widget != null && HoverObject.Widget.ResponseMouse)
                     HoverObject.Widget.Hover = true;
@@ -299,7 +299,7 @@ namespace Blumind.Controls.MapViews
             }
 
             // Normal Status
-            if (HoverObject != null && HoverObject.Widget != null && HoverObject == PressObject)
+            if (!HoverObject.IsEmpty && HoverObject.Widget != null && HoverObject == PressObject)
             {
                 HoverObject.Widget.OnMouseClick(new MouseEventArgs(e.Button, e.Clicks, e.X, e.Y, e.Delta));
             }

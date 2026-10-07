@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -119,7 +119,7 @@ namespace Blumind.Controls.MapViews
                         //grfImg.TranslateTransform( Bounds.X - StartBounds.X, Bounds.Y - StartBounds.Y);
                         grfImg.TranslateTransform(-LogicLocation.X + Padding, -LogicLocation.Y + Padding);
 
-                        var args = new RenderArgs(RenderMode.UserInface, grfImg, OwnerView, ChartBox.DefaultChartFont);
+                        using var args = new RenderArgs(RenderMode.UserInface, grfImg, OwnerView, ChartBox.DefaultChartFont);
                         OwnerView.Render.PaintTopics(Topics, args);
                     }
                 }

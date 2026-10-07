@@ -27,12 +27,10 @@ namespace Blumind.Core
 
             if (Clipboard.GetDataObject().GetDataPresent("text/html"))
             {
-                var data = Clipboard.GetData("text/html");
-                if (data is Stream)
+                if (Clipboard.TryGetData<Stream>("text/html", out var stream))
                 {
-                    var stream = (Stream)data;
                     var buffer = new byte[stream.Length];
-                    stream.Read(buffer, 0, buffer.Length);
+                    stream.ReadExactly(buffer);
                     return Encoding.Unicode.GetString(buffer);
                 }
             }

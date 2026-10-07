@@ -687,11 +687,13 @@ namespace Blumind.Controls
                 return;
 
             if (cl.BackColor.HasValue)
-                e.Graphics.FillRectangle(new SolidBrush(cl.BackColor.Value), rect);
+            {
+                using var background = new SolidBrush(cl.BackColor.Value);
+                e.Graphics.FillRectangle(background, rect);
+            }
 
-            e.Graphics.DrawString(cl.Text, (cl.Font == null ? e.Font : cl.Font),
-                (cl.ForeColor.HasValue ? new SolidBrush(cl.ForeColor.Value) : e.ForeBrush), 
-                rect, PaintHelper.SFLeft);
+            using var foreground = cl.ForeColor.HasValue ? new SolidBrush(cl.ForeColor.Value) : null;
+            e.Graphics.DrawString(cl.Text, cl.Font ?? e.Font, foreground ?? e.ForeBrush, rect, PaintHelper.SFLeft);
         }
 
         protected virtual void OnAfterPaint(PaintEventArgs e)

@@ -328,7 +328,7 @@ namespace Blumind.Controls.MapViews
 
         protected virtual void OnBoundsChanged(Rectangle old)
         {
-            if (old != null && Visible)
+            if (!old.IsEmpty && Visible)
                 Invalidate(old);
 
             if (ShowCloseButton)

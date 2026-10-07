@@ -555,6 +555,9 @@ namespace Blumind.Controls
             try
             {
                 Rectangle rect = GetRectInBounds(new Rectangle(0, 0, width, height), image.Width, image.Height);
+                // Repeatedly drawing an unchanged thumbnail loses translucent pixel precision.
+                if (rect.Size == image.Size)
+                    return (Image)image.Clone();
                 Bitmap bmp = new Bitmap(rect.Width, rect.Height);
                 if (rect.Width > 0 && rect.Height > 0)
                 {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Xml;
@@ -13,7 +13,13 @@ namespace Blumind.Model.MindMaps
     [Serializable]
     struct MapClipboardData
     {
-        string Data;
+        public const string ClipboardFormat = "Blumind.Nodes.Xml";
+        public string Data { get; private set; }
+
+        public MapClipboardData(string xml)
+        {
+            Data = xml;
+        }
 
         public MapClipboardData(ChartObject[] mapObjects)
         {
@@ -25,7 +31,7 @@ namespace Blumind.Model.MindMaps
         void SetChartObjects(ChartObject[] mapObjects)
         {
             var dom = new XmlDocument();
-            dom.LoadXml("<?xml version='1.0' encoding='utf-8'?><nodes/>");
+            dom = global::Blumind.Core.XmlIO.Parse("<?xml version='1.0' encoding='utf-8'?><nodes/>");
 
             foreach (var mapObject in mapObjects)
             {
@@ -61,7 +67,7 @@ namespace Blumind.Model.MindMaps
             XmlDocument dom = new XmlDocument();
             try
             {
-                dom.LoadXml(Data);
+                dom = global::Blumind.Core.XmlIO.Parse(Data);
             }
             catch(System.Exception ex)
             {

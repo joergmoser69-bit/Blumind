@@ -74,7 +74,7 @@ namespace Blumind.Controls
 
         protected virtual void OnCommandHistoryChanged()
         {
-            if (CommandHistory.Count > 0)
+            if (ChartPage != null && (CommandHistory.Count > 0 || UndoCommandHistory.Count > 0))
                 ChartPage.Modified = true;
 
             if (CommandHistoryChanged != null)
@@ -107,7 +107,9 @@ namespace Blumind.Controls
             if (command == null)
                 throw new ArgumentNullException("command");
 
-            if (command.Execute())
+            if (!command.Execute())
+                return false;
+
             {
                 if (command.NoteHistory)
                 {
@@ -131,8 +133,10 @@ namespace Blumind.Controls
             {
                 if (CommandHistory.Count > 0)
                 {
-                    Command comd = CommandHistory.Pop();
-                    comd.Rollback();
+                    Command comd = CommandHistory.Peek();
+                    if (!comd.Rollback())
+                        break;
+                    CommandHistory.Pop();
                     UndoCommandHistory.Push(comd);
                     changed = true;
 
@@ -162,8 +166,10 @@ namespace Blumind.Controls
             {
                 if (UndoCommandHistory.Count > 0)
                 {
-                    Command comd = UndoCommandHistory.Pop();
-                    comd.Execute();
+                    Command comd = UndoCommandHistory.Peek();
+                    if (!comd.Execute())
+                        break;
+                    UndoCommandHistory.Pop();
                     CommandHistory.Push(comd);
                     changed = true;
 

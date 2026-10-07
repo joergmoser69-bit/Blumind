@@ -9,8 +9,15 @@ using Blumind.Model.MindMaps;
 
 namespace Blumind.Controls.MapViews
 {
-    class RenderArgs
+    class RenderArgs : IDisposable
     {
+        bool ownsGraphics;
+
+        public void Dispose()
+        {
+            if (ownsGraphics && Graphics is IDisposable disposable)
+                disposable.Dispose();
+        }
         RenderMode _Mode = RenderMode.UserInface;
 
         public RenderArgs()
@@ -33,6 +40,7 @@ namespace Blumind.Controls.MapViews
         {
             Mode = mode;
             Graphics = new GdiGraphics(graphics);
+            ownsGraphics = true;
             Chart = chart;
             Font = new GdiFont(font);
         }
@@ -42,6 +50,7 @@ namespace Blumind.Controls.MapViews
         {
             Mode = mode;
             Graphics = new GdiGraphics(graphics);
+            ownsGraphics = true;
             View = view;
             Font = new GdiFont(font);
 

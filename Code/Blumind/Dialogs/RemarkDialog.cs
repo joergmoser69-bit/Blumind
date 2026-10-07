@@ -201,14 +201,19 @@ namespace Blumind.Dialogs
 
         void btnCancelEdit_Click(object sender, EventArgs e)
         {
+            Remark = RemarkObject?.Remark;
             IsEditMode = false;
         }
 
-        void btnAcceptChanges_Click(object sender, EventArgs e)
+        async void btnAcceptChanges_Click(object sender, EventArgs e)
         {
             if (RemarkObject != null && IsEditMode)
             {
-                htmlEditor.EndEdit();
+                var current = RemarkObject;
+                btnSave.Enabled = false;
+                try { await htmlEditor.EndEditAsync(); }
+                finally { if (!IsDisposed) RefreshViewStatus(); }
+                if (IsDisposed || RemarkObject != current || !IsEditMode) return;
                 if (htmlEditor.Modified)
                 {
                     RemarkObject.Remark = Remark;

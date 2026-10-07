@@ -22,6 +22,7 @@ namespace Blumind.Controls
         ToolStripSeparator toolStripSeparator1;
         bool _ExternalMode;
         bool _EditMode;
+        bool updatingRemark;
         Form externalDialog;
 
         public RemarkEditor()
@@ -192,7 +193,7 @@ namespace Blumind.Controls
 
         void CurrentObject_RemarkChanged(object sender, EventArgs e)
         {
-            if (CurrentObject != null)
+            if (CurrentObject != null && !updatingRemark)
             {
                 htmlEditor.Text = CurrentObject.Remark;
             }
@@ -202,7 +203,11 @@ namespace Blumind.Controls
         {
             if (!ReadOnly && CurrentObject != null)
             {
-                CurrentObject.Remark = htmlEditor.Text;
+                // The model raises RemarkChanged synchronously. Do not reload the
+                // browser on our own keystrokes, which would reset its selection.
+                updatingRemark = true;
+                try { CurrentObject.Remark = htmlEditor.Text; }
+                finally { updatingRemark = false; }
             }
         }
 
@@ -260,12 +265,17 @@ namespace Blumind.Controls
             }
         }
 
-        void tsbEdit_Click(object sender, EventArgs e)
+        async void tsbEdit_Click(object sender, EventArgs e)
         {
             if (EditMode)
             {
                 if (!ReadOnly && CurrentObject != null)
                 {
+                    var current = CurrentObject;
+                    tsbEdit.Enabled = false;
+                    try { await htmlEditor.EndEditAsync(); }
+                    finally { if (!IsDisposed) tsbEdit.Enabled = true; }
+                    if (IsDisposed || CurrentObject != current) return;
                     CurrentObject.Remark = htmlEditor.Text;
                 }
 

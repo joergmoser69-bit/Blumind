@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -45,7 +45,7 @@ namespace Blumind.Core.Exports
                 }
 
                 var render = new GeneralRender();
-                var args = new RenderArgs(RenderMode.Export, grf, (MindMap)chart, ChartBox.DefaultChartFont);
+                using var args = new RenderArgs(RenderMode.Export, grf, (MindMap)chart, ChartBox.DefaultChartFont);
                 render.Paint((MindMap)chart, args);
             }
 

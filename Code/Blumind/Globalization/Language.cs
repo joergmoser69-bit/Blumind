@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.IO;
 using System.Windows.Forms;
@@ -136,7 +136,7 @@ namespace Blumind.Globalization
                 XmlDocument dom = new XmlDocument();
                 try
                 {
-                    dom.Load(filename);
+                    dom = global::Blumind.Core.XmlIO.Load(filename);
                 }
                 catch(System.Exception ex)
                 {
@@ -164,7 +164,7 @@ namespace Blumind.Globalization
                 {
                     try
                     {
-                        dom.Load(stream);
+                        dom = global::Blumind.Core.XmlIO.Load(stream);
                     }
                     catch (System.Exception ex)
                     {
@@ -221,7 +221,7 @@ namespace Blumind.Globalization
             XmlDocument dom = new XmlDocument();
             try
             {
-                dom.LoadXml(text);
+                dom = global::Blumind.Core.XmlIO.Parse(text);
                 language = new Language();
                 language.LoadXml(dom);
             }

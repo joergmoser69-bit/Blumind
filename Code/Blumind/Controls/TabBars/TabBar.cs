@@ -1976,8 +1976,7 @@ namespace Blumind.Controls
 
             public static bool IsTabItem(HitResult hitResult)
             {
-                return hitResult != null
-                    && hitResult.Item != null;
+                return hitResult.Item != null;
             }
 
             public bool IsEmpty

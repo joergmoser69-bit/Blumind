@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Printing;
@@ -33,7 +33,8 @@ namespace Blumind.Controls.MapViews
                 e.Graphics.FillPath(new SolidBrush(ChartBackColor), gp);
                 e.Graphics.DrawPath(new Pen(BorderColor), gp);*/
                 e.Graphics.Clear(ChartBackColor);
-                e.Graphics.DrawRectangle(new Pen(BorderColor), 0, 0, rect.Width - 1, rect.Height - 1);
+                using var borderPen = new Pen(BorderColor);
+                e.Graphics.DrawRectangle(borderPen, 0, 0, rect.Width - 1, rect.Height - 1);
             }
             else
             {
@@ -70,7 +71,7 @@ namespace Blumind.Controls.MapViews
 
             if (Render != null && Map != null)
             {
-                RenderArgs args = new RenderArgs(RenderMode.UserInface, e.Graphics, this, e.Font);
+                using var args = new RenderArgs(RenderMode.UserInface, e.Graphics, this, e.Font);
                 Render.Paint(Map, args);
             }
         }
@@ -126,7 +127,7 @@ namespace Blumind.Controls.MapViews
                 zoom = (int)(zoom * 1000) / 1000.0f;
 
                 Rectangle rectMargin = PaintHelper.Zoom(e.MarginBounds, zoom);
-                RenderArgs args = new RenderArgs(RenderMode.Print, e.Graphics, this, ChartBox.DefaultChartFont);
+                using var args = new RenderArgs(RenderMode.Print, e.Graphics, this, ChartBox.DefaultChartFont);
                 //Size size = Render.Layout(Map, args);
                 e.Graphics.Clip = new Region(e.MarginBounds);
 

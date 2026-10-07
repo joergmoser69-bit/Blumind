@@ -328,6 +328,14 @@ namespace Blumind.Controls
             }
         }
 
+        public async System.Threading.Tasks.Task EndEditAsync()
+        {
+            if (!ReadOnly && ViewType == HtmlEditorViewType.Design)
+                await editBox.EndEditAsync();
+            else
+                EndEdit();
+        }
+
         protected override void OnTextChanged(EventArgs e)
         {
             base.OnTextChanged(e);

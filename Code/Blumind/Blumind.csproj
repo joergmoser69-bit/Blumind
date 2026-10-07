@@ -1,66 +1,26 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{EE33FCC4-93B5-426B-8F71-5C2B2AEE143E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RootNamespace>Blumind</RootNamespace>
     <AssemblyName>Blumind</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <ApplicationIcon>
-    </ApplicationIcon>
-    <StartupObject>
-    </StartupObject>
-    <Win32Resource>.\Resources\NativeResources.res</Win32Resource>
-    <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile>hyfree.public.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>true</DelaySign>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <ApplicationIcon>Resources\Icons\logo.ico</ApplicationIcon>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <!-- Keep the existing WinForms designer contracts during the runtime migration. -->
+    <NoWarn>$(NoWarn);WFO1000</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PdfSharp">
-      <HintPath>..\Library\PdfSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Design" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="PDFsharp-GDI" Version="6.2.4" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4022.49" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Canvas\GdiPlus\GdiFont.cs" />
@@ -264,9 +224,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Controls\ToolStrips\ToolStripExtensions.cs" />
-    <Compile Include="Core\DotNet3\ExtensionAttribute.cs" />
-    <Compile Include="Core\DotNet3\Func.cs" />
-    <Compile Include="Core\DotNet3\Linq.cs" />
     <Compile Include="Core\DotNet3\ListExtensions.cs" />
     <Compile Include="Core\Win32Apis\OSHelper.cs" />
     <Compile Include="Design\FillTypeEditor.cs" />
@@ -506,12 +463,10 @@
     </Compile>
     <Compile Include="Design\EnumEditor.cs" />
     <Compile Include="Design\LanguagesEditor.cs" />
-    <Compile Include="Design\ListEditor.cs">
-    </Compile>
+    <Compile Include="Design\ListEditor.cs"></Compile>
     <Compile Include="Design\PaddingEditor.cs" />
     <Compile Include="Design\PictureEditor.cs" />
-    <Compile Include="Design\HyperlinkEditor.cs">
-    </Compile>
+    <Compile Include="Design\HyperlinkEditor.cs"></Compile>
     <Compile Include="Dialogs\AddIconDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -608,13 +563,10 @@
     <Compile Include="Controls\Paint\PaintHelper.Convert.cs" />
     <Compile Include="Design\BaseTypeConverter.cs" />
     <Compile Include="Design\BoolConverter.cs" />
-    <Compile Include="Design\LineAnchorEditor.cs">
-    </Compile>
-    <Compile Include="Design\LineStyleEditor.cs">
-    </Compile>
+    <Compile Include="Design\LineAnchorEditor.cs"></Compile>
+    <Compile Include="Design\LineStyleEditor.cs"></Compile>
     <Compile Include="Design\LineWidthEditor.cs" />
-    <Compile Include="Design\TopicShapeEditor.cs">
-    </Compile>
+    <Compile Include="Design\TopicShapeEditor.cs"></Compile>
     <Compile Include="Model\Styles\WindowsColorSchemes.cs" />
     <Compile Include="Design\MindMapLayoutTypeEditor.cs" />
     <Compile Include="Controls\Misc\MyTreeView.cs" />
@@ -825,7 +777,6 @@
     <EmbeddedResource Include="TestForm.resx">
       <DependentUpon>TestForm.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="app.config" />
     <None Include="Resources\NativeResources.res" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -1223,13 +1174,16 @@
     <None Include="Resources\Images\zoom_in.png" />
     <None Include="Resources\Images\theme.png" />
   </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <ItemGroup>
+    <Compile Include="Core\XmlIO.cs" />
+    <Compile Include="Core\AtomicFile.cs" />
+    <Compile Include="Core\EmbeddedImageEncoding.cs" />
+    <Compile Include="Controls\HtmlEditors\HtmlEditBox.Commands.cs" />
+    <EmbeddedResource Include="Resources\html_editor.html" />
+  </ItemGroup>
+  <Target Name="RemoveUnusedWebView2WpfReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

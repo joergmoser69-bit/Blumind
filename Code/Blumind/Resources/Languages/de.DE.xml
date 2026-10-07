@@ -13,6 +13,8 @@
     <culture id="German"/>
   </compatibility>
   <words>
+    <item name="Automatic update checking is disabled in this preview.">Die automatische Update-Prüfung ist in dieser Testversion deaktiviert.</item>
+    <item name="WebView2 unavailable – HTML source editor">WebView2 nicht verfügbar – HTML-Quelltexteditor</item>
     <item name="About">Über</item>
     <item name="Menu">Menü</item>
     <item name="Open">Öffnen</item>

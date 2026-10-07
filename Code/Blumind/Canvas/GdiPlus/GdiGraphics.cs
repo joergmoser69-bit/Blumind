@@ -8,8 +8,30 @@ using Blumind.Controls;
 
 namespace Blumind.Canvas.GdiPlus
 {
-    class GdiGraphics : IGraphics
+    class GdiGraphics : IGraphics, IDisposable
     {
+        readonly List<IDisposable> ownedResources = new List<IDisposable>();
+
+        GdiPen OwnPen(Pen pen)
+        {
+            ownedResources.Add(pen);
+            return new GdiPen(pen);
+        }
+
+        GdiBrush OwnBrush(Brush brush)
+        {
+            ownedResources.Add(brush);
+            return new GdiBrush(brush);
+        }
+
+        public void Dispose()
+        {
+            // The caller owns the drawing surface and fonts passed to Font(Font).
+            foreach (var resource in ownedResources) resource.Dispose();
+            ownedResources.Clear();
+            foreach (var cap in LineAnchors.Values) cap?.Dispose();
+            LineAnchors.Clear();
+        }
         Graphics Graphics;
         Dictionary<LineAnchor, CustomLineCap> LineAnchors = new Dictionary<LineAnchor, CustomLineCap>();
 
@@ -42,22 +64,22 @@ namespace Blumind.Canvas.GdiPlus
 
         public IBrush LinearGradientBrush(Rectangle rect, Color color1, Color color2, float angle)
         {
-            return new GdiBrush(new LinearGradientBrush(rect, color1, color2, angle));
+            return OwnBrush(new LinearGradientBrush(rect, color1, color2, angle));
         }
 
         public IBrush LinearGradientBrush(Rectangle rect, Color color1, Color color2, LinearGradientMode mode)
         {
-            return new GdiBrush(new LinearGradientBrush(rect, color1, color2, mode));
+            return OwnBrush(new LinearGradientBrush(rect, color1, color2, mode));
         }
 
         public IPen Pen(Color color)
         {
-            return new GdiPen(new Pen(color));
+            return OwnPen(new Pen(color));
         }
 
         public IPen Pen(Color color, float width)
         {
-            return new GdiPen(new Pen(color, width));
+            return OwnPen(new Pen(color, width));
         }
 
         public IPen Pen(Color color, float width, DashStyle dashStyle)
@@ -65,7 +87,7 @@ namespace Blumind.Canvas.GdiPlus
             var pen = new Pen(color, width);
             pen.DashStyle = dashStyle;
 
-            return new GdiPen(pen);
+            return OwnPen(pen);
         }
 
         public IPen Pen(Color color, DashStyle dashStyle)
@@ -73,17 +95,18 @@ namespace Blumind.Canvas.GdiPlus
             var pen = new Pen(color);
             pen.DashStyle = dashStyle;
 
-            return new GdiPen(pen);
+            return OwnPen(pen);
         }
 
         public IBrush SolidBrush(Color color)
         {
-            return new GdiBrush(new SolidBrush(color));
+            return OwnBrush(new SolidBrush(color));
         }
 
         public IFont Font(IFont font, FontStyle fontStyle)
         {
             var f = new Font((Font)font.Raw, fontStyle);
+            ownedResources.Add(f);
             return new GdiFont(f);
         }
 
@@ -94,7 +117,9 @@ namespace Blumind.Canvas.GdiPlus
 
         public IGraphicsPath GraphicsPath()
         {
-            return new GdiGraphicsPath(new GraphicsPath());
+            var path = new GraphicsPath();
+            ownedResources.Add(path);
+            return new GdiGraphicsPath(path);
         }
 
         public SizeF MeasureString(string text, IFont font)
@@ -155,6 +180,7 @@ namespace Blumind.Canvas.GdiPlus
             if (sa != null || ea != null)
             {
                 Pen pen = (Pen)source.Clone();
+                ownedResources.Add(pen);
 
                 if(sa != null)
                     pen.CustomStartCap = sa;
@@ -212,7 +238,7 @@ namespace Blumind.Canvas.GdiPlus
             if (pen == null && brush == null)
                 return;
 
-            var path = PaintHelper.GetRoundRectangle(new Rectangle(x, y, width, height), round);
+            using var path = PaintHelper.GetRoundRectangle(new Rectangle(x, y, width, height), round);
             if (brush is GdiBrush)
                 Graphics.FillPath((Brush)brush.Raw, path);
             if(pen is GdiPen)

@@ -381,7 +381,8 @@ namespace Blumind.Model.Widgets
             Image sourceImage = Data;
             if (Data == null)
             {
-                if (ThumbImage == null || ThumbImage.Size == Chart.PictureThumbSize)
+                if (ThumbImage == null || (ThumbImage.Width <= Chart.PictureThumbSize.Width &&
+                    ThumbImage.Height <= Chart.PictureThumbSize.Height))
                     return;
                 else
                     sourceImage = ThumbImage;

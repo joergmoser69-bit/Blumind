@@ -35,6 +35,7 @@ namespace Blumind
             if (!args.IsNullOrEmpty() && TryOpenByOtherInstance(args))
                 return;
 
+            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -95,7 +96,7 @@ namespace Blumind
 
             var name = Process.GetCurrentProcess().ProcessName;
             var otherInstances = Process.GetProcessesByName(name)
-                .Where(inst => inst != Process.GetCurrentProcess() && inst.MainWindowHandle != IntPtr.Zero)
+                .Where(inst => inst.Id != Environment.ProcessId && inst.MainWindowHandle != IntPtr.Zero && IsSameExecutable(inst))
                 .ToArray();
             if (!otherInstances.IsNullOrEmpty())
             {
@@ -124,6 +125,16 @@ namespace Blumind
                 return true;
 
             return false;
+        }
+
+        static bool IsSameExecutable(Process process)
+        {
+            try
+            {
+                return StringComparer.OrdinalIgnoreCase.Equals(process.MainModule?.FileName, Application.ExecutablePath);
+            }
+            catch (System.ComponentModel.Win32Exception) { return false; }
+            catch (InvalidOperationException) { return false; }
         }
 
         static void Current_OpitonsChanged(object sender, EventArgs e)

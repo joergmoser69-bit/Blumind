@@ -21,7 +21,7 @@ namespace Blumind.Canvas.Pdf
         {
             get
             {
-                return new XPdfFontOptions(PdfSharp.Pdf.PdfFontEncoding.Unicode, PdfSharp.Pdf.PdfFontEmbedding.Default);
+                return new XPdfFontOptions(PdfSharp.Pdf.PdfFontEncoding.Unicode);
             }
         }
 
@@ -148,13 +148,13 @@ namespace Blumind.Canvas.Pdf
         public IFont Font(IFont font, FontStyle fontStyle)
         {
             var xf = (XFont)font.Raw;
-            xf = new XFont(xf.GdiFamily, xf.Size, xf.Style | (XFontStyle)fontStyle, FontOptions);
+            xf = new XFont(xf.FontFamily.Name, xf.Size, xf.Style | (XFontStyleEx)fontStyle, FontOptions);
             return new PdfFont(xf);
         }
 
         public IFont Font(Font font)
         {
-            var xfont = new XFont(font.FontFamily, font.Size, (XFontStyle)font.Style, FontOptions);
+            var xfont = new XFont(font.FontFamily.Name, font.SizeInPoints, (XFontStyleEx)font.Style, FontOptions);
             return new PdfFont(xfont);
         }
 
@@ -188,7 +188,7 @@ namespace Blumind.Canvas.Pdf
             {
                 var xfont = (XFont)font.Raw;
                 var lines = text.Split(new string[] { "\r", "\n", "\r\n" }, StringSplitOptions.None);
-                var lineHeight = (int)Math.Ceiling(xfont.GetHeight(Graphics));
+                var lineHeight = (int)Math.Ceiling(xfont.GetHeight());
                 var totalHeight = lineHeight * lines.Length;
 
                 int y;

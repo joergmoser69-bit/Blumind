@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Windows.Forms;
 using Blumind.Controls;
 using Blumind.Core;
@@ -11,6 +12,11 @@ namespace Blumind.Model
 {
     public class Picture
     {
+        static readonly HttpClient ImageClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(15),
+            MaxResponseContentBufferSize = 32 * 1024 * 1024
+        };
         private string _ID;
         private string _Url;
         private string _Name;
@@ -75,13 +81,13 @@ namespace Blumind.Model
         {
             if (!string.IsNullOrEmpty(url))
             {
-                WebClient wc = new WebClient();
-                byte[] buffer = wc.DownloadData(url);
+                byte[] buffer = ImageClient.GetByteArrayAsync(url).GetAwaiter().GetResult();
                 if (buffer != null && buffer.Length > 0)
                 {
                     using (MemoryStream stream = new MemoryStream(buffer))
                     {
-                        return Image.FromStream(stream);
+                        using var decoded = Image.FromStream(stream);
+                        return (Image)decoded.Clone();
                     }
                 }
             }

@@ -59,9 +59,9 @@ namespace Blumind.Controls.MapViews
         {
             AfterSelection = null;
 
-            if (Clipboard.ContainsData(typeof(MapClipboardData).ToString()))
+            if (Clipboard.TryGetData<string>(MapClipboardData.ClipboardFormat, out var xml))
             {
-                return PasteTopic(Topic, Clipboard.GetData(typeof(MapClipboardData).ToString()));
+                return PasteTopic(Topic, new MapClipboardData(xml));
             }
             else if (Clipboard.ContainsText())
             {

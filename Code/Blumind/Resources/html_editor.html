@@ -1,0 +1,85 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-blumind-editor'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<style>html,body{margin:0;height:100%}#editor{box-sizing:border-box;min-height:100%;padding:8px;outline:none;overflow-wrap:anywhere}img{max-width:100%}table{border-collapse:collapse}</style>
+</head><body><div id="editor" contenteditable="false"></div>
+<script nonce="blumind-editor">
+(() => {
+  const box = document.getElementById('editor');
+  let revision = 0, selection = null, edited = false;
+  const tags = new Set('a b blockquote br code dd div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre s span strike strong sub sup table tbody td th thead tr u ul'.split(' '));
+  const styles = new Set('color background-color font-family font-size font-weight font-style text-decoration text-align vertical-align line-height margin margin-left margin-right margin-top margin-bottom padding border border-color border-width border-style width height'.split(' '));
+  const safeLink = value => { try { return ['http:', 'https:', 'mailto:'].includes(new URL(value).protocol); } catch { return false; } };
+  function sanitize(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    function clean(parent) {
+      for (const element of [...parent.children]) {
+        const tag = element.tagName.toLowerCase();
+        if (!tags.has(tag)) {
+          if (['script','style','iframe','object','embed','svg','math','template','link','meta'].includes(tag)) element.remove();
+          else { clean(element); element.replaceWith(...element.childNodes); }
+          continue;
+        }
+        for (const attr of [...element.attributes]) {
+          const name = attr.name.toLowerCase();
+          if (name === 'style') {
+            for (const property of [...element.style])
+              if (!styles.has(property) || /url\s*\(|expression\s*\(|@import/i.test(element.style.getPropertyValue(property))) element.style.removeProperty(property);
+          } else if (tag === 'a' && name === 'href' && safeLink(attr.value)) {
+          } else if (tag === 'img' && name === 'src' && (safeLink(attr.value) || /^data:image\/(png|jpeg|gif|webp|bmp);base64,/i.test(attr.value))) {
+          } else if (!['title','alt','align','width','height','colspan','rowspan','color','face','size','border','cellpadding','cellspacing'].includes(name)) element.removeAttribute(name);
+        }
+        clean(element);
+      }
+    }
+    clean(template.content);
+    return template.innerHTML;
+  }
+  function state(changed = edited) { return {revision,html:box.innerHTML,text:box.innerText,changed}; }
+  function publish() { window.chrome.webview.postMessage(state()); }
+  function restore() {
+    box.focus();
+    if (selection) { const s = getSelection(); s.removeAllRanges(); s.addRange(selection); }
+  }
+  document.addEventListener('selectionchange', () => {
+    const s = getSelection();
+    if (s.rangeCount && box.contains(s.anchorNode)) selection = s.getRangeAt(0).cloneRange();
+  });
+  box.addEventListener('input', () => { edited = true; publish(); });
+  box.addEventListener('blur', publish);
+  box.addEventListener('paste', e => {
+    e.preventDefault();
+    const html = e.clipboardData.getData('text/html');
+    if (html) document.execCommand('insertHTML', false, sanitize(html));
+    else document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+    edited = true; publish();
+  });
+  box.addEventListener('drop', e => e.preventDefault());
+  box.addEventListener('click', e => {
+    const link = e.target.closest('a');
+    if (link) { e.preventDefault(); if (box.contentEditable !== 'true' && safeLink(link.href)) window.chrome.webview.postMessage({revision,link:link.href}); }
+  });
+  window.editor = {
+    set(html, version, readOnly) { revision = version; selection = null; edited = false; box.innerHTML = sanitize(html); this.readOnly(readOnly); publish(); },
+    readOnly(value) { box.contentEditable = String(!value); },
+    font(name, size) { box.style.fontFamily = name; box.style.fontSize = size; },
+    state,
+    sanitize,
+    paste(html) { restore(); document.execCommand('insertHTML', false, sanitize(html)); edited = true; publish(); },
+    command(name, value) {
+      restore();
+      if (name === 'backColor') name = 'hiliteColor';
+      if (name === 'increaseFontSize' || name === 'decreaseFontSize') {
+        const current = Number(document.queryCommandValue('fontSize')) || 3;
+        value = Math.max(1, Math.min(7, current + (name === 'increaseFontSize' ? 1 : -1)));
+        name = 'fontSize';
+      }
+      document.execCommand(name, false, value);
+      if (name !== 'copy') edited = true;
+      publish();
+    }
+  };
+  window.chrome.webview.postMessage({ready:true});
+})();
+</script></body></html>
