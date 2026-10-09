@@ -1,4 +1,8 @@
-param([switch]$SkipTests)
+param(
+    [switch]$SkipTests,
+    [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9._-]*$')]
+    [string]$OutputName = 'Blumind-net10-win-x64'
+)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $projectRoot
@@ -11,11 +15,12 @@ try {
         dotnet Code/Blumind.Tests/bin/Release/net10.0-windows/Blumind.Tests.dll $projectRoot
         if ($LASTEXITCODE -ne 0) { throw 'Regression tests failed.' }
     }
-    $destination = Join-Path $projectRoot 'artifacts/Blumind-net10-win-x64'
+    $destination = Join-Path $projectRoot ('artifacts/' + $OutputName)
     dotnet publish Code/Blumind/Blumind.csproj -c Release -r win-x64 --self-contained true --no-restore -o $destination
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
     Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE') -Destination $destination
     Copy-Item -LiteralPath (Join-Path $projectRoot 'Documents/Modernisierung-Testversion.md') -Destination (Join-Path $destination 'Liesmich.md')
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'Documents/Mermaid-Export.md') -Destination $destination
     Copy-Item -LiteralPath (Join-Path $projectRoot 'scripts/Start-Portable.cmd') -Destination $destination
     Copy-Item -LiteralPath (Join-Path $projectRoot 'Documents/Blumind Quick Help.bmd') -Destination $destination
     New-Item -ItemType Directory -Path (Join-Path $destination 'Icons') -Force | Out-Null
@@ -43,7 +48,7 @@ try {
         New-Item -ItemType Directory -Path $packageLicenseDirectory -Force | Out-Null
         Get-ChildItem -LiteralPath $packageDirectory -File | Where-Object { $_.Name -match '^(LICENSE|NOTICE|THIRD-PARTY-NOTICES)(\..*)?$' } | Copy-Item -Destination $packageLicenseDirectory
     }
-    Compress-Archive -Path (Join-Path $destination '*') -DestinationPath (Join-Path $projectRoot 'artifacts/Blumind-net10-win-x64.zip') -Force
+    Compress-Archive -Path (Join-Path $destination '*') -DestinationPath (Join-Path $projectRoot ('artifacts/' + $OutputName + '.zip')) -Force
     Write-Host "Portable build: $destination"
 }
 finally { Pop-Location }

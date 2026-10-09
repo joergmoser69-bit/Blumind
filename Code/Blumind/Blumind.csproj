@@ -457,6 +457,7 @@
     <Compile Include="ChartControls\ChartSelection.cs" />
     <Compile Include="Controls\Paint\BezierPoint.cs" />
     <Compile Include="Core\Exports\TxtEngine.cs" />
+    <Compile Include="Core\Exports\MermaidEngine.cs" />
     <Compile Include="Core\AccelaratorKeys\ShortcutKey.cs" />
     <Compile Include="Controls\Misc\PaddingBox.cs">
       <SubType>Component</SubType>

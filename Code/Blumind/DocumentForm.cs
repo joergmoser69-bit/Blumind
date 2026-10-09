@@ -1033,6 +1033,8 @@ namespace Blumind
                     DocumentType.FreeMind}),
                 new DocumentTypeGroup("Text", new DocumentType[]{
                     DocumentType.Txt,
+                    DocumentType.Mermaid,
+                    DocumentType.MermaidMarkdown,
                     DocumentType.Csv}),
                 };
         }

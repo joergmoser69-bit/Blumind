@@ -1,6 +1,6 @@
 # Blumind .NET 10 – erste Testversion
 
-Stand: 2. Oktober 2026. Ziel ist die technische Modernisierung bei vertrauter Bedienung. Oberfläche, Mindmap-Struktur und `.bmd`-Dateiformat bleiben erhalten.
+Stand: 7. Oktober 2026. Ziel ist die technische Modernisierung bei vertrauter Bedienung. Oberfläche, Mindmap-Struktur und `.bmd`-Dateiformat bleiben erhalten.
 
 ## Starten
 
@@ -20,10 +20,11 @@ Für formatierte Notizen wird die Edge WebView2 Runtime benötigt. Bei fehlender
 - Grafikressourcen werden nach Zeichen-/Exportvorgängen freigegeben; eingebettete unveränderte Bilder behalten ihre ursprünglichen Bytes.
 - Windows-DPI-Modus, Manifest und Shell-Aufrufe für die neue Laufzeit angepasst.
 - Die alte HTTP-Update-Prüfung ist deaktiviert. Es gibt noch keine neue Release-/Updatequelle.
+- Mermaid-Export für die Dokumentation: `.mmd` mit der vollständigen Hierarchie oder `.md` mit Mermaid-Block und zugeordneten Notizen. Siehe [Mermaid-Export](Mermaid-Export.md).
 
 ## Bitte im Alltag prüfen
 
-Automatisch geprüft: Release-Build ohne Warnungen/Fehler, 22 erfolgreiche Regressionstests und erfolgreicher Start der portablen EXE. Die Prüfungen umfassen fünf bestehende `.bmd`-Beispiele, drei FreeMind-Importe, Speichern/Wiederöffnen, Bilddaten, Undo/Redo, XML-Zwischenablage, PNG/SVG/PDF und den WebView2-Notizeditor einschließlich fortlaufender Eingabe im Notizfeld.
+Automatisch geprüft: Release-Build ohne Warnungen/Fehler, 25 erfolgreiche Regressionstests und erfolgreicher Start der portablen EXE. Die Prüfungen umfassen fünf bestehende `.bmd`-Beispiele, drei FreeMind-Importe, Speichern/Wiederöffnen, Bilddaten, Undo/Redo, XML-Zwischenablage, PNG/SVG/PDF/Mermaid und den WebView2-Notizeditor einschließlich fortlaufender Eingabe im Notizfeld. Zusätzlich wurden zehn Diagramme mit Mermaid 11.12.0 geparst und zwei Diagramme im echten Browser gerendert.
 
 1. Eine eigene Karte unter einem neuen Namen öffnen und speichern; anschließend schließen und erneut öffnen.
 2. Knoten hinzufügen, umbenennen, verschieben, löschen sowie Undo/Redo und Kopieren/Einfügen verwenden.
@@ -31,6 +32,7 @@ Automatisch geprüft: Release-Build ohne Warnungen/Fehler, 22 erfolgreiche Regre
 4. Notizen bearbeiten, Änderungen übernehmen und zwischen Quelltext-/Formatansicht wechseln.
 5. PNG, SVG und PDF exportieren; die Dateien öffnen und Darstellung sowie Schriften vergleichen.
 6. Zoom, Suche, Tastaturkürzel, Druckvorschau und das Verhalten auf deinen Monitoren ausprobieren.
+7. Unter Export „Mermaid-Diagramm“ oder „Mermaid mit Notizen (Markdown)“ auswählen und den Mermaid-Block in deine Dokumentation übernehmen.
 
 Rückmeldungen sind besonders hilfreich mit: ausgeführtem Schritt, erwartetem Verhalten, tatsächlichem Verhalten und einer Beispielkarte, falls der Fehler vom Inhalt abhängt.
 

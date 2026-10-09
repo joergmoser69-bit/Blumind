@@ -19,11 +19,15 @@ Das Skript stellt festgelegte NuGet-Pakete wieder her, baut die Solution, starte
 
 Ohne interaktive Tests: `scripts/Build.ps1 -SkipTests`. Das ersetzt keine erfolgreich ausgeführten Regressionstests.
 
+Wenn die bisherige portable Ausgabe noch läuft, kann eine neue Ausgabe separat gebaut werden: `scripts/Build.ps1 -OutputName Blumind-net10-mermaid-win-x64`.
+
 Die ursprünglichen Ressourcen-/Installerprojekte bleiben als historische Referenz im Repository; sie gehören nicht mehr zum aktuellen Build. Die alten .NET-2-Kompatibilitätsklassen werden nicht mehr kompiliert.
 
 ## Testversion verwenden
 
 ZIP vollständig entpacken und `Start-Portable.cmd` starten. Für weitere Hinweise und den Prüfablauf siehe [Testversion](Documents/Modernisierung-Testversion.md).
+
+Für Dokumentation stehen Mermaid (`.mmd`) und Mermaid mit Notizen (`.md`) im Exportdialog zur Verfügung. Umfang, Einfügen und Grenzen beschreibt [Mermaid-Export](Documents/Mermaid-Export.md).
 
 Der bisherige WinForms-Designer-Vertrag bleibt erhalten. Die neue Designer-Regel WFO1000 ist während dieser Migration gezielt ausgenommen; die Laufzeit- und übrigen Compiler-/Analyserdiagnosen bleiben aktiv.
 

@@ -27,6 +27,8 @@ namespace Blumind.Core
         public static readonly DocumentType FreeMind;
         public static readonly DocumentType Blumind;
         public static readonly DocumentType Pdf;
+        public static readonly DocumentType Mermaid;
+        public static readonly DocumentType MermaidMarkdown;
 
         static DocumentType()
         {
@@ -60,6 +62,8 @@ namespace Blumind.Core
             Csv = new DocumentType("CSV",
                 "text/csv",
                 new string[] { ".csv" });
+            Mermaid = new DocumentType("Mermaid Diagram", "text/vnd.mermaid", new[] { ".mmd" });
+            MermaidMarkdown = new DocumentType("Mermaid Markdown", "text/markdown", new[] { ".md" });
             FreeMind = new DocumentType("FreeMind", 
                 "application/freemind",
                 new string[] { ".mm" });
@@ -162,6 +166,8 @@ namespace Blumind.Core
                  FreeMind,
                  Txt,
                  Csv,
+                 Mermaid,
+                 MermaidMarkdown,
                  Blumind,
                  Pdf,
             };

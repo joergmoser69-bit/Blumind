@@ -82,6 +82,8 @@ namespace Blumind.Core.Exports
                 new TiffEngine(),
                 new SvgEngine(),
                 new TxtEngine(),
+                new MermaidEngine(),
+                new MermaidEngine(true),
                 new CsvEngine(),
                 new FreeMindEngine(),
                 new PdfEngine(),
@@ -180,12 +182,13 @@ namespace Blumind.Core.Exports
             {
                 string filename = ST.EscapeFileName(c.Name);
                 int index = 1;
-                while (files.Contains(filename))
+                while (files.Contains(filename, StringComparer.OrdinalIgnoreCase))
                 {
                     filename = ST.EscapeFileName(c.Name) + index.ToString();
                     index++;
                 }
 
+                files.Add(filename);
                 filename = Path.Combine(directory, filename + ext);
                 success |= ExportChartToFile(document, c, filename);
             }

@@ -327,5 +327,9 @@
     <item name="Pause">Pause</item>
     <item name="Time is over!">Die Zeit ist abgelaufen!</item>
     <item name="{0} Minutes">{0} Minuten</item>
+    <item name="Mermaid Diagram">Mermaid-Diagramm</item>
+    <item name="Mermaid Markdown">Mermaid mit Notizen (Markdown)</item>
+    <item name="Map notes">Kartennotizen</item>
+    <item name="Hierarchy export: layout, styling, icons/images, progress widgets and cross-links are not included.">Export der Hierarchie: Layout, Formatierung, Symbole/Bilder, Fortschrittsanzeigen und Querverbindungen sind nicht enthalten.</item>
   </words>
 </dictionary>

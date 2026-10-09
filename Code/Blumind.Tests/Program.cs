@@ -10,10 +10,12 @@ using Blumind.Configuration;
 using Blumind.Controls;
 using Blumind.Controls.MapViews;
 using Blumind.Core;
+using Blumind.Core.Exports;
 using Blumind.Globalization;
 using Blumind.Model;
 using Blumind.Model.Documents;
 using Blumind.Model.MindMaps;
+using Blumind.Model.Widgets;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
@@ -83,6 +85,18 @@ static class RegressionTests
             Check(restored.Length == 1 && restored[0].Text == topic.Text && restored[0].Children.Count == 1, "Clipboard data changed");
         });
         Run("Layout and PNG/SVG/PDF rendering", TestExports);
+        Run("Mermaid hierarchy, escaping, folded topics and unchanged source", TestMermaid);
+        Run("Mermaid Markdown notes, multiple charts and export registration", TestMermaidMarkdown);
+        Run("Mermaid export keeps charts with duplicate names", () =>
+        {
+            string folder = Path.Combine(output, "mermaid-duplicates");
+            Directory.CreateDirectory(folder);
+            var first = new MindMap(new Topic("First"), "Same");
+            var second = new MindMap(new Topic("Second"), "same");
+            Check(new MermaidExportProbe().ToFolder(new[] { first, second }, folder), "Folder export failed");
+            Check(File.ReadAllText(Path.Combine(folder, "Same.mmd")).Contains("First"), "First chart overwritten");
+            Check(File.ReadAllText(Path.Combine(folder, "same1.mmd")).Contains("Second"), "Second chart missing");
+        });
         Run("External link scheme validation", () =>
         {
             Check(HtmlEditBox.IsAllowedLink("https://example.org"), "HTTPS rejected");
@@ -150,6 +164,7 @@ static class RegressionTests
                     await Task.Delay(800);
                     Check(main.IsHandleCreated && !main.IsDisposed, "Main window not running");
                     Check(main.GetForms<DocumentForm>().Any(f => f.Document != null), "Document view not opened");
+                    Check(main.GetForms<DocumentForm>().First().GetExportDocumentTypes().SelectMany(g => g.Types).Any(t => t == DocumentType.MermaidMarkdown), "Mermaid missing from document export menu");
                     foreach (var form in main.GetForms<DocumentForm>()) form.Document.Modified = false;
                     main.Close();
                 });
@@ -248,6 +263,62 @@ static class RegressionTests
         pdf.Save(Path.Combine(output, "export.pdf"));
         using var loaded = PdfSharp.Pdf.IO.PdfReader.Open(Path.Combine(output, "export.pdf"));
         Check(loaded.PageCount == 1 && XmlIO.Load(Path.Combine(output, "export.svg")).DocumentElement.LocalName == "svg", "Invalid exports");
+    }
+
+    static void TestMermaid()
+    {
+        var rootTopic = new Topic("Root \"[](){}\" # & <script> ä 日本語 🌱\nSecond line ``` *_ ") { ID = "original-root" };
+        var folded = new Topic("Same") { Folded = true };
+        folded.Children.Add(new Topic("%%{init: bad}\nHidden child"));
+        rootTopic.Children.Add(folded);
+        rootTopic.Children.Add(new Topic("Same"));
+        rootTopic.Children.Add(new Topic(""));
+        var map = new MindMap(rootTopic, "Escaping");
+        var document = new Document();
+        document.Charts.Add(map);
+        document.Modified = false;
+        string source = MermaidEngine.Serialize(new[] { map }, false);
+        Check(source.StartsWith("mindmap\n  n0(\""), "Missing mindmap/root syntax");
+        Check(source.Contains("      n2[\"#37;#37;#123;init: bad#125;<br/>Hidden child\"]"), "Folded descendant, directive escaping or indentation lost");
+        Check(source.Contains("n1[\"Same\"]") && source.Contains("n3[\"Same\"]"), "Duplicate labels did not get unique IDs");
+        Check(source.Contains("#34;") && source.Contains("#35;") && source.Contains("#60;script#62;") && !source.Contains("```"), "Unsafe label syntax was not escaped");
+        Check(source.Contains("ä 日本語 🌱") && source.Contains("n4[\" \"]"), "Unicode or empty labels lost");
+        Check(rootTopic.ID == "original-root" && folded.Folded && !document.Modified, "Export changed the source");
+        string file = Path.Combine(output, "mermaid-escaping.mmd");
+        MermaidEngine.WriteFile(new[] { map }, file, false);
+        Check(File.ReadAllText(file) == source && !File.ReadAllBytes(file).Take(3).SequenceEqual(new byte[] { 239, 187, 191 }), "UTF-8 output differs or contains BOM");
+        foreach (string example in Directory.GetFiles(Path.Combine(root, "Documents"), "*.bmd"))
+        {
+            var examples = Document.Load(example).Charts.OfType<MindMap>().ToArray();
+            for (int index = 0; index < examples.Length; index++)
+                MermaidEngine.WriteFile(new[] { examples[index] }, Path.Combine(output, Path.GetFileName(example) + "." + index + ".mmd"), false);
+        }
+    }
+
+    static void TestMermaidMarkdown()
+    {
+        var topic = new Topic("Node ``` [title]") { Remark = "<p>First &amp; ä</p><p>Second<br>Third</p><script>bad()</script>" };
+        topic.Add(new NoteWidget { Remark = "<p>Widget note</p>" });
+        topic.Add(new NoteWidget { Remark = "<p>Another widget note</p>" });
+        var map = new MindMap(topic, "Title ```\nnext") { Remark = "<p>Map note</p>" };
+        var second = new MindMap(new Topic("Other"), "Other map");
+        string text = MermaidEngine.Serialize(new[] { map, second }, true);
+        Check(text.Split("```mermaid").Length == 3, "Multiple diagrams were not separated");
+        Check(text.Contains("## n0 — Node") && text.Contains("Widget note") && text.Contains("Another widget note") && text.Contains("Map note"), "Notes or their node association missing");
+        Check(text.Contains("First &amp; ä  \n\n") && text.Contains("Second  \nThird") && !text.Contains("bad()") && !text.Contains("<p>"), "Notes not converted into readable plain text");
+        Check(!text.Contains("Node ```") && text.Contains("\\[title\\]"), "Node title broke Markdown structure");
+        Throws<ArgumentException>(() => MermaidEngine.Serialize(new[] { map, second }, false));
+        MermaidEngine.WriteFile(new[] { map, second }, Path.Combine(output, "mermaid-notes.md"), true);
+        foreach (var type in new[] { DocumentType.Mermaid, DocumentType.MermaidMarkdown })
+        {
+            Check(ChartsExportEngine.GetEngine(type.TypeMime)?.DocumentType == type, "Export engine not registered");
+            Check(new Document().GetExportDocumentTypes().SelectMany(g => g.Types).Any(t => t == type), "Export format missing from dialog");
+        }
+    }
+
+    sealed class MermaidExportProbe : MermaidEngine
+    {
+        public bool ToFolder(IEnumerable<ChartPage> charts, string folder) => ExportChartsToFolder(new Document(), charts, folder);
     }
 
     static void Run(string name, Action test)
